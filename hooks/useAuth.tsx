@@ -1,6 +1,7 @@
 import React, {createContext, useContext, useMemo, useState} from 'react';
 import {GoogleSignin} from '@react-native-google-signin/google-signin';
 import auth from '@react-native-firebase/auth';
+import {ANDROID_CLIENT_ID} from '@env';
 
 const AuthContext = createContext({});
 export default function useAuth() {
@@ -8,16 +9,12 @@ export default function useAuth() {
 }
 export function AuthProvider({children}) {
   const [user, setUser] = useState<any>(null);
-  const [loadingInitial, setLoadingInitial] = useState(true);
 
-    GoogleSignin.configure({
-      webClientId:
-        '1015731250585-mte56pgu2vig24hbdr75i9rohmh9to31.apps.googleusercontent.com',
-    });
+  GoogleSignin.configure({
+    webClientId: ANDROID_CLIENT_ID,
+  });
 
   const signInWithGoogle = async () => {
-
-    console.log('sign in with google called');
     // Check if your device supports Google Play
     await GoogleSignin.hasPlayServices({showPlayServicesUpdateDialog: true});
     // Get the users ID token
@@ -32,10 +29,7 @@ export function AuthProvider({children}) {
       .then(user => {
         setUser(user);
       })
-      .catch(error => console.error(error))
-      .finally(() => {
-        setLoadingInitial(false);
-      });
+      .catch(error => console.error(error));
   };
 
   const memoedValue = useMemo(
@@ -47,8 +41,6 @@ export function AuthProvider({children}) {
   );
 
   return (
-    <AuthContext.Provider value={memoedValue}>
-      {!loadingInitial && children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={memoedValue}>{children}</AuthContext.Provider>
   );
 }

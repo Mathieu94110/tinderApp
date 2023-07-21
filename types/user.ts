@@ -29,8 +29,8 @@ type user = {
   email: string;
   emailVerified: true;
   isAnonymous: false;
-  metadata: {lastSignInTime: number; creationTime: number};
-  multiFactor: {enrolledFactors: any[]};
+  metadata: { lastSignInTime: number; creationTime: number };
+  multiFactor: { enrolledFactors: any[] };
   phoneNumber: null | unknown;
   photoURL: string;
   providerData: providerData[];
@@ -46,4 +46,13 @@ type providerData = {
   photoURL: string;
   providerId: string;
   uid: string;
+};
+
+export type TinderProfile = {
+  firstName: string;
+  lastName: string;
+  occupation: string;
+  photoURL: string;
+  age: number;
+  id: number;
 };

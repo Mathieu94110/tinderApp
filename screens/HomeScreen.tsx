@@ -15,7 +15,7 @@ function Home({ navigation }: HomeProps) {
         <TouchableOpacity onPress={() => navigation.navigate('Login')}>
           <Image style={styles.homeHeaderAvatarImg} source={require('../assets/my-portrait.jpg')} />
         </TouchableOpacity>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('Modal')}>
           <Image style={styles.homeHeaderTinderImg} source={require('../assets/tinder-icon.png')} />
         </TouchableOpacity>
         <TouchableOpacity>
@@ -79,14 +79,14 @@ function Home({ navigation }: HomeProps) {
       </View>
       <View style={styles.homeFooter}>
         <TouchableOpacity
-          // onPress={() => swipeRef.current?.swipeLeft()}
+          onPress={() => swipeRef.current?.swipeLeft()}
           style={[styles.homeProfileArrows, styles.crossBtn]}
         >
           <Text style={{ color: 'red', fontSize: 24, fontWeight: '600' }}>X</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          // onPress={() => swipeRef.current?.swipeRight()}
+          onPress={() => swipeRef.current?.swipeRight()}
           style={[styles.homeProfileArrows, styles.heartBtn]}
         >
           <Icon name='heart' color='green' size={24} />
@@ -141,6 +141,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: '#fff',
     width: '100%',
+    display: 'flex',
+    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'stretch',
     height: 80,
@@ -162,11 +164,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 20,
     lineHeight: 24,
+    color: '#000',
   },
   homeProfileCardAge: {
     fontWeight: '600',
     fontSize: 24,
     lineHeight: 32,
+    color: '#000',
   },
   homeFooter: {
     display: 'flex',
@@ -177,8 +181,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 9999,
-    width: 60,
-    height: 60,
+    width: 54,
+    height: 54,
   },
   crossBtn: {
     backgroundColor: '#FECACA',

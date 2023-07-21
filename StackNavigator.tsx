@@ -1,8 +1,9 @@
 import React from 'react';
 import HomeScreen from './screens/HomeScreen';
 import LoginScreen from './screens/LoginScreen';
-import useAuth from './hooks/useAuth';
+import ModalScreen from './screens/ModalScreen';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import useAuth from './hooks/useAuth';
 
 const Stack = createNativeStackNavigator();
 
@@ -12,7 +13,14 @@ const StackNavigator = () => {
   return (
     <Stack.Navigator>
       {user ? (
-        <Stack.Screen name='Home' component={HomeScreen} />
+        <>
+          <Stack.Group>
+            <Stack.Screen name='Home' component={HomeScreen} />
+          </Stack.Group>
+          <Stack.Group screenOptions={{ presentation: 'modal' }}>
+            <Stack.Screen name='Modal' component={ModalScreen} />
+          </Stack.Group>
+        </>
       ) : (
         <Stack.Screen name='Login' component={LoginScreen} />
       )}

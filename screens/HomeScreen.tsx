@@ -4,7 +4,7 @@ import Swiper from 'react-native-deck-swiper';
 import { FakeProfiles } from '../locales/profiles';
 import { TinderProfile } from '../types/user';
 import { HomeProps } from '../types/navigation';
-// import Icon from 'react-native-vector-icons/FontAwesome';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 function Home({ navigation }: HomeProps) {
   const swipeRef = useRef<number | null>(null);
@@ -19,8 +19,7 @@ function Home({ navigation }: HomeProps) {
           <Image style={styles.homeHeaderTinderImg} source={require('../assets/tinder-icon.png')} />
         </TouchableOpacity>
         <TouchableOpacity>
-          {/* <Icon name='comments' size={30} color='#900' />; */}
-          {/* <Ionicons name='md-chatbubbles-sharp' size={30} color='#FF5864' /> */}
+          <Icon name='comments' size={30} color='#FF5864' />
         </TouchableOpacity>
       </View>
       <View style={styles.homeBody}>
@@ -81,15 +80,16 @@ function Home({ navigation }: HomeProps) {
       <View style={styles.homeFooter}>
         <TouchableOpacity
           // onPress={() => swipeRef.current?.swipeLeft()}
-          style={styles.homeProfileArrows}
+          style={[styles.homeProfileArrows, styles.crossBtn]}
         >
-          {/* <Entypo name='cross' color='red' size={24} /> */}
+          <Text style={{ color: 'red', fontSize: 24, fontWeight: '600' }}>X</Text>
         </TouchableOpacity>
+
         <TouchableOpacity
           // onPress={() => swipeRef.current?.swipeRight()}
-          style={styles.homeProfileArrows}
+          style={[styles.homeProfileArrows, styles.heartBtn]}
         >
-          {/* <AntDesign name='heart' color='green' size={24} /> */}
+          <Icon name='heart' color='green' size={24} />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -177,8 +177,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 9999,
-    width: 16,
-    height: 64,
+    width: 60,
+    height: 60,
+  },
+  crossBtn: {
+    backgroundColor: '#FECACA',
+  },
+  heartBtn: {
+    backgroundColor: '#BBF7D0',
   },
   green: {
     color: 'green',

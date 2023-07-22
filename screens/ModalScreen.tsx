@@ -2,6 +2,7 @@ import { useNavigation } from '@react-navigation/core';
 import React, { useLayoutEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import useAuth from '../hooks/useAuth';
+import firestore from '@react-native-firebase/firestore';
 
 const ModalScreen = () => {
   const navigation = useNavigation();
@@ -11,6 +12,8 @@ const ModalScreen = () => {
   const [age, setAge] = useState(null);
 
   const incompleteForm = !image || !job || !age;
+  const uid = user.user.uid;
+  const usersCollection = firestore().collection('Users');
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -22,8 +25,59 @@ const ModalScreen = () => {
     });
   }, []);
 
-  function updateUserProfile() {}
+  async function checkUserProfile() {
+    usersCollection.get().then((querySnapshot) => {
+      if (querySnapshot.size > 0) {
+        querySnapshot.forEach((documentSnapShot) => {
+          console.log('docid =', documentSnapShot.data().id, 'uid =', uid);
+          const userId = documentSnapShot.id;
+          const userUid = documentSnapShot.data().id;
+          if (userUid === uid) {
+            updateUserProfile(userId);
+          } else {
+            addUser();
+          }
+        });
+      } else {
+        addUser();
+      }
+    });
+  }
 
+  const addUser = () => {
+    usersCollection
+      .add({
+        id: uid,
+        photoUrl: image,
+        job: job,
+        age: age,
+      })
+      .then(() => {
+        console.log('User added');
+      });
+  };
+
+  const updateUserProfile = (userId: string) => {
+    usersCollection
+      .doc(userId)
+      .update({
+        photoUrl: image,
+        job: job,
+        age: age,
+      })
+      .then(() => {
+        console.log('User updated');
+      });
+  };
+
+  const deteteUsers = (userId: string) => {
+    usersCollection
+      .doc(userId)
+      .delete()
+      .then(() => {
+        console.log('User deleted');
+      });
+  };
   return (
     <View style={styles.modalScreen}>
       <Image
@@ -33,7 +87,9 @@ const ModalScreen = () => {
           uri: 'https://www.nicepng.com/png/detail/269-2697827_tinder-full-color-watermark-tinder-man-city.png',
         }}
       />
-      <Text style={styles.modalWelcomeText}>Bienvenue {user.user.displayName}!</Text>
+      <Text style={styles.modalWelcomeText}>
+        Bienvenue {user.user.displayName}!{user.user.uid}
+      </Text>
 
       <Text style={styles.modalStepsText}>Étape 1: La photo de profil</Text>
       <TextInput
@@ -64,7 +120,7 @@ const ModalScreen = () => {
       <TouchableOpacity
         disabled={incompleteForm}
         style={[styles.modalUpdateProfileContainer, incompleteForm ? styles.gray : styles.red]}
-        onPress={updateUserProfile}
+        onPress={checkUserProfile}
       >
         <Text style={styles.modalUpdateProfileText}>Mettre à jour le profil</Text>
       </TouchableOpacity>

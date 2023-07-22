@@ -1,13 +1,32 @@
-import React, { useRef } from 'react';
+import React, { useRef, useLayoutEffect } from 'react';
 import { View, Text, Image, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
 import Swiper from 'react-native-deck-swiper';
 import { FakeProfiles } from '../locales/profiles';
 import { TinderProfile } from '../types/user';
-import { HomeProps } from '../types/navigation';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import firestore from '@react-native-firebase/firestore';
+import useAuth from '../hooks/useAuth';
+import { useNavigation } from '@react-navigation/core';
 
-function Home({ navigation }: HomeProps) {
+function Home() {
   const swipeRef = useRef<number | null>(null);
+  const { user } = useAuth();
+  const navigation = useNavigation();
+  const usersCollection = firestore().collection('Users');
+
+  useLayoutEffect(
+    () =>
+      usersCollection.get().then((querySnapshot) => {
+        querySnapshot.forEach((documentSnapShot) => {
+          console.log('docid =', documentSnapShot.data().id, 'uid =', uid);
+          const userUid = documentSnapShot.data().id;
+          if (!userUid || userUid !== user.user.id) {
+            navigation.navigate('Modal');
+          }
+        });
+      }),
+    [],
+  );
 
   return (
     <SafeAreaView style={styles.homeScreen}>

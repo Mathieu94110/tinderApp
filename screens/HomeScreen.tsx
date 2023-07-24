@@ -1,5 +1,5 @@
 import React, { useRef, useLayoutEffect, useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
+import { View, Text, Image, StyleSheet, SafeAreaView, TouchableOpacity, Alert } from 'react-native';
 import firestore from '@react-native-firebase/firestore';
 import Swiper from 'react-native-deck-swiper';
 import { useNavigation } from '@react-navigation/core';
@@ -19,7 +19,6 @@ function Home() {
     () =>
       usersCollection.get().then((querySnapshot) => {
         querySnapshot.forEach((documentSnapShot) => {
-          console.log('docid =', documentSnapShot.data().id, 'uid =', uid);
           const userUid = documentSnapShot.data().id;
           if (!userUid || userUid !== user.id) {
             navigation.navigate('Modal');
@@ -49,6 +48,37 @@ function Home() {
     fetchCard();
     return unsub;
   }, []);
+
+  const swipeLeft = async (cardIndex: number) => {
+    if (!profiles[cardIndex]) return;
+    swipe(cardIndex, 'passes');
+  };
+  const swipeRight = async (cardIndex: number) => {
+    if (!profiles[cardIndex]) return;
+    swipe(cardIndex, 'matches');
+  };
+
+  const swipe = async (cardIndex: number, choice: string) => {
+    const userSwiped = profiles[cardIndex];
+    usersCollection.get().then((querySnapshot) => {
+      querySnapshot.forEach((documentSnapShot) => {
+        const userId = documentSnapShot.id;
+        const userUid = documentSnapShot.data().id;
+        if (userUid === user.uid) {
+          usersCollection
+            .doc(userId)
+            .collection(choice)
+            .add(userSwiped)
+            .then(() => {
+              console.log(`${userSwiped.displayName} sent into ${choice} category`);
+            })
+            .catch((error) => {
+              Alert.alert('Erreur', error.message);
+            });
+        }
+      });
+    });
+  };
 
   return (
     <SafeAreaView style={styles.homeScreen}>
@@ -132,12 +162,10 @@ function Home() {
             animateCardOpacity
             verticalSwipe={false}
             onSwipedLeft={(cardIndex: number) => {
-              console.log('Swipe PASS', cardIndex);
-              // swipeLeft(cardIndex);
+              swipeLeft(cardIndex);
             }}
             onSwipedRight={(cardIndex: number) => {
-              console.log('Swipe MATCH', cardIndex);
-              // swipeRight(cardIndex);
+              swipeRight(cardIndex);
             }}
             cardIndex={0}
             backgroundColor={'#4FD0E9'}

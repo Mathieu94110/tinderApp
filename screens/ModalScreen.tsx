@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/core';
 import React, { useLayoutEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, Alert, StyleSheet } from 'react-native';
 import useAuth from '../hooks/useAuth';
 import firestore from '@react-native-firebase/firestore';
 
@@ -23,14 +23,12 @@ const ModalScreen = () => {
       },
       headerTitleStyle: { color: 'white' },
     });
-    console.log(user);
   }, []);
 
   async function checkUserProfile() {
     usersCollection.get().then((querySnapshot) => {
       if (querySnapshot.size > 0) {
         querySnapshot.forEach((documentSnapShot) => {
-          console.log('docid =', documentSnapShot.data().id, 'uid =', uid);
           const userId = documentSnapShot.id;
           const userUid = documentSnapShot.data().id;
           if (userUid === uid) {
@@ -72,6 +70,9 @@ const ModalScreen = () => {
       .then(() => {
         console.log('User updated');
         navigation.navigate('Home');
+      })
+      .catch((error) => {
+        Alert.alert('Erreur', error.message);
       });
   };
 

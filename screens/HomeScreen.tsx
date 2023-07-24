@@ -1,39 +1,64 @@
-import React, { useRef, useLayoutEffect } from 'react';
+import React, { useRef, useLayoutEffect, useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
+import firestore from '@react-native-firebase/firestore';
 import Swiper from 'react-native-deck-swiper';
-import { FakeProfiles } from '../locales/profiles';
+import { useNavigation } from '@react-navigation/core';
+import useAuth from '../hooks/useAuth';
 import { TinderProfile } from '../types/user';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import firestore from '@react-native-firebase/firestore';
-import useAuth from '../hooks/useAuth';
-import { useNavigation } from '@react-navigation/core';
 
 function Home() {
-  const swipeRef = useRef<number | null>(null);
+  const [profiles, setProfiles] = useState<TinderProfile[]>([]);
   const { user } = useAuth();
+  const swipeRef = useRef<number | null>(null);
   const navigation = useNavigation();
   const usersCollection = firestore().collection('Users');
 
+  // redirect to Modal screen as long as user doesnt exist on firebase db
   useLayoutEffect(
     () =>
       usersCollection.get().then((querySnapshot) => {
         querySnapshot.forEach((documentSnapShot) => {
           console.log('docid =', documentSnapShot.data().id, 'uid =', uid);
           const userUid = documentSnapShot.data().id;
-          if (!userUid || userUid !== user.user.id) {
+          if (!userUid || userUid !== user.id) {
             navigation.navigate('Modal');
           }
         });
       }),
     [],
   );
+  // Get all users from firebase db who are not current user
+  useEffect(() => {
+    let unsub;
+    const fetchCard = async () => {
+      unsub = firestore()
+        .collection('Users')
+        .where('id', '!=', user.uid)
+        .get()
+        .then((querySnapshot) => {
+          setProfiles(
+            querySnapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            })),
+          );
+        });
+    };
+
+    fetchCard();
+    return unsub;
+  }, []);
 
   return (
     <SafeAreaView style={styles.homeScreen}>
       <View style={styles.homeHeader}>
-        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-          <Image style={styles.homeHeaderAvatarImg} source={require('../assets/my-portrait.jpg')} />
-        </TouchableOpacity>
+        {user && (
+          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+            <Image style={styles.homeHeaderAvatarImg} source={{ uri: user.photoURL }} />
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity onPress={() => navigation.navigate('Modal')}>
           <Image style={styles.homeHeaderTinderImg} source={require('../assets/tinder-icon.png')} />
         </TouchableOpacity>
@@ -42,66 +67,90 @@ function Home() {
         </TouchableOpacity>
       </View>
       <View style={styles.homeBody}>
-        <Swiper
-          containerStyle={{ backgroundColor: 'transparent' }}
-          cards={FakeProfiles}
-          overlayLabels={{
-            left: {
-              title: 'PASS',
-              style: {
-                label: {
-                  textAlign: 'right',
-                  color: 'red',
+        {profiles && (
+          <Swiper
+            containerStyle={{ backgroundColor: 'transparent' }}
+            cards={profiles}
+            overlayLabels={{
+              left: {
+                title: 'PASS',
+                style: {
+                  label: {
+                    textAlign: 'right',
+                    color: 'red',
+                  },
                 },
               },
-            },
-            right: {
-              title: 'MATCH',
-              style: {
-                label: {
-                  color: '#4DED30',
+              right: {
+                title: 'MATCH',
+                style: {
+                  label: {
+                    color: '#4DED30',
+                  },
                 },
               },
-            },
-          }}
-          animateCardOpacity
-          verticalSwipe={false}
-          onSwipedLeft={(cardIndex: number) => {
-            console.log('Swipe PASS', cardIndex);
-            // swipeLeft(cardIndex);
-          }}
-          onSwipedRight={(cardIndex: number) => {
-            console.log('Swipe MATCH', cardIndex);
-            // swipeRight(cardIndex);
-          }}
-          cardIndex={0}
-          backgroundColor={'#4FD0E9'}
-          stackSize={5}
-          renderCard={(card: TinderProfile) => (
-            <View key={card.id} style={styles.homeProfileCard}>
-              <Text>{card.firstName}</Text>
-              {card.photoURL && (
-                <Image source={{ uri: card.photoURL }} style={styles.homeProfileCardImg} />
-              )}
-              <View style={styles.cardShadow}>
-                <View>
-                  <Text style={styles.homeProfileCardName}>
-                    {card.firstName} {card.lastName}
-                  </Text>
-                  <Text>{card.occupation}</Text>
+            }}
+            renderCard={(card: TinderProfile) => {
+              return card ? (
+                <View key={card?.id} style={styles.homeProfileCard}>
+                  <Text>{card?.displayName}</Text>
+
+                  <Image
+                    source={{
+                      uri: card?.photoUrl
+                        ? card?.photoUrl
+                        : 'https://audiovisuel.epiknet.org/wp-content/uploads/2019/03/%EF%BC%9F.jpg',
+                    }}
+                    style={styles.homeProfileCardImg}
+                  />
+
+                  <View style={styles.cardShadow}>
+                    <View>
+                      <Text style={styles.homeProfileCardName}>
+                        <Text>{card?.displayName}</Text>
+                      </Text>
+                      <Text>{card?.job}</Text>
+                    </View>
+
+                    <Text style={styles.homeProfileCardAge}>{card?.age}</Text>
+                  </View>
                 </View>
-                <Text style={styles.homeProfileCardAge}>{card.age}</Text>
-              </View>
-            </View>
-          )}
-        />
+              ) : (
+                <View style={styles.cardShadow}>
+                  <Text style={styles.noResults}>Vous avez parcouru tous les profils</Text>
+
+                  <Image
+                    height={100}
+                    width={100}
+                    source={{
+                      uri: 'https://cdn.shopify.com/s/files/1/1061/1924/products/Crying_Face_Emoji_large.png?v=1571606037',
+                    }}
+                  />
+                </View>
+              );
+            }}
+            animateCardOpacity
+            verticalSwipe={false}
+            onSwipedLeft={(cardIndex: number) => {
+              console.log('Swipe PASS', cardIndex);
+              // swipeLeft(cardIndex);
+            }}
+            onSwipedRight={(cardIndex: number) => {
+              console.log('Swipe MATCH', cardIndex);
+              // swipeRight(cardIndex);
+            }}
+            cardIndex={0}
+            backgroundColor={'#4FD0E9'}
+            stackSize={5}
+          ></Swiper>
+        )}
       </View>
       <View style={styles.homeFooter}>
         <TouchableOpacity
           onPress={() => swipeRef.current?.swipeLeft()}
           style={[styles.homeProfileArrows, styles.crossBtn]}
         >
-          <Text style={{ color: 'red', fontSize: 24, fontWeight: '600' }}>X</Text>
+          <Text style={styles.cross}>X</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -178,6 +227,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 1.42,
     elevation: 2,
+  },
+  noResults: {
+    fontWeight: '600',
+    paddingBottom: 20,
+  },
+  cross: {
+    color: 'red',
+    fontSize: 24,
+    fontWeight: '600',
   },
   homeProfileCardName: {
     fontWeight: '600',

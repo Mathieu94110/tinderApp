@@ -12,7 +12,7 @@ const ModalScreen = () => {
   const [age, setAge] = useState(null);
 
   const incompleteForm = !image || !job || !age;
-  const uid = user.user.uid;
+  const uid = user.uid;
   const usersCollection = firestore().collection('Users');
 
   useLayoutEffect(() => {
@@ -23,6 +23,7 @@ const ModalScreen = () => {
       },
       headerTitleStyle: { color: 'white' },
     });
+    console.log(user);
   }, []);
 
   async function checkUserProfile() {
@@ -48,12 +49,15 @@ const ModalScreen = () => {
     usersCollection
       .add({
         id: uid,
+        displayName: user.displayName,
         photoUrl: image,
         job: job,
         age: age,
+        timestamp: firestore.FieldValue.serverTimestamp(),
       })
       .then(() => {
         console.log('User added');
+        navigation.navigate('Home');
       });
   };
 
@@ -67,6 +71,7 @@ const ModalScreen = () => {
       })
       .then(() => {
         console.log('User updated');
+        navigation.navigate('Home');
       });
   };
 
@@ -87,9 +92,7 @@ const ModalScreen = () => {
           uri: 'https://www.nicepng.com/png/detail/269-2697827_tinder-full-color-watermark-tinder-man-city.png',
         }}
       />
-      <Text style={styles.modalWelcomeText}>
-        Bienvenue {user.user.displayName}!{user.user.uid}
-      </Text>
+      <Text style={styles.modalWelcomeText}>Bienvenue {user.displayName}!</Text>
 
       <Text style={styles.modalStepsText}>Étape 1: La photo de profil</Text>
       <TextInput

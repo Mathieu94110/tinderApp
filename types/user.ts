@@ -1,14 +1,14 @@
-export type googleUserInfo = {
-  additionalUserInfo: additionalUserInfo;
-  user: user;
+export type GoogleUserInfo = {
+  additionalUserInfo: AdditionalUserInfo;
+  user: User;
 };
 
-type additionalUserInfo = {
+type AdditionalUserInfo = {
   isNewUser: boolean;
-  profile: profile;
+  profile: Profile;
   providerId: string;
 };
-type profile = {
+type Profile = {
   aud: string;
   azp: string;
   email: string;
@@ -24,7 +24,7 @@ type profile = {
   sub: string;
 };
 
-type user = {
+export type User = {
   displayName: string;
   email: string;
   emailVerified: true;
@@ -33,13 +33,13 @@ type user = {
   multiFactor: { enrolledFactors: any[] };
   phoneNumber: null | unknown;
   photoURL: string;
-  providerData: providerData[];
+  providerData: ProviderData[];
   providerId: string;
   tenantId: null;
   uid: string;
 };
 
-type providerData = {
+type ProviderData = {
   displayName: string;
   email: string;
   phoneNumber: null | string | number;
@@ -47,12 +47,11 @@ type providerData = {
   providerId: string;
   uid: string;
 };
-
 export type TinderProfile = {
-  firstName: string;
-  lastName: string;
-  occupation: string;
-  photoURL: string;
-  age: number;
-  id: number;
+  age: string;
+  displayName: string;
+  id: string;
+  job: string;
+  photoUrl: string | null;
+  timestamp: Object;
 };

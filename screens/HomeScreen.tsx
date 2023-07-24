@@ -1,11 +1,11 @@
 import React, { useRef, useLayoutEffect, useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, SafeAreaView, TouchableOpacity, Alert } from 'react-native';
-import firestore from '@react-native-firebase/firestore';
+import firestore, { firebase } from '@react-native-firebase/firestore';
 import Swiper from 'react-native-deck-swiper';
 import { useNavigation } from '@react-navigation/core';
+import Icon from 'react-native-vector-icons/FontAwesome';
 import useAuth from '../hooks/useAuth';
 import { TinderProfile } from '../types/user';
-import Icon from 'react-native-vector-icons/FontAwesome';
 
 function Home() {
   const [profiles, setProfiles] = useState<TinderProfile[]>([]);
@@ -17,35 +17,58 @@ function Home() {
   // redirect to Modal screen as long as user doesnt exist on firebase db
   useLayoutEffect(
     () =>
-      usersCollection.get().then((querySnapshot) => {
-        querySnapshot.forEach((documentSnapShot) => {
-          const userUid = documentSnapShot.data().id;
-          if (!userUid || userUid !== user.id) {
-            navigation.navigate('Modal');
-          }
-        });
+      firebase.auth().onAuthStateChanged((user) => {
+        if (!user.uid) {
+          navigation.navigate('Modal');
+        }
       }),
     [],
   );
-  // Get all users from firebase db who are not current user
+  // Get all users from firebase db who are not current user and not included inside passes or matches categories
   useEffect(() => {
     let unsub;
-    const fetchCard = async () => {
-      unsub = firestore()
-        .collection('Users')
-        .where('id', '!=', user.uid)
-        .get()
-        .then((querySnapshot) => {
-          setProfiles(
-            querySnapshot.docs.map((doc) => ({
-              id: doc.id,
-              ...doc.data(),
-            })),
-          );
-        });
-    };
+    const fetchCards = async (): Promise<any> => {
+      usersCollection.get().then((querySnapshot) => {
+        querySnapshot.forEach(async (documentSnapShot) => {
+          const userUid = documentSnapShot.data().id;
+          const userId = documentSnapShot.id;
+          if (userUid === user.uid) {
+            const passes = await usersCollection
+              .doc(userId)
+              .collection('passes')
+              .get()
+              .then((snapshot) => snapshot.docs.map((doc) => doc.data().id));
 
-    fetchCard();
+            const matches = await usersCollection
+              .doc(userId)
+              .collection('matches')
+              .get()
+              .then((snapshot) => snapshot.docs.map((doc) => doc.data().id));
+
+            Promise.all([passes, matches]).then(() => {
+              const passedUserIds = passes.length > 0 ? passes : ['test'];
+              const matchedUserIds = matches.length > 0 ? matches : ['test'];
+              unsub = firestore()
+                .collection('Users')
+                .where('id', 'not-in', [...passedUserIds, ...matchedUserIds])
+                .get()
+                .then((querySnapshot) => {
+                  setProfiles(
+                    querySnapshot.docs
+                      .filter((doc) => doc.data().id !== user.uid)
+                      .map((doc) => ({
+                        id: doc.id,
+                        ...doc.data(),
+                      }))
+                      .sort((x, y) => x.timestamp - y.timestamp),
+                  );
+                });
+            });
+          }
+        });
+      });
+    };
+    fetchCards();
     return unsub;
   }, []);
 

@@ -6,6 +6,7 @@ import { useNavigation } from '@react-navigation/core';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import useAuth from '../hooks/useAuth';
 import { TinderProfile } from '../types/user';
+import auth from '@react-native-firebase/auth';
 
 function Home() {
   const [profiles, setProfiles] = useState<TinderProfile[]>([]);
@@ -17,8 +18,8 @@ function Home() {
   // redirect to Modal screen as long as user doesnt exist on firebase db
   useLayoutEffect(
     () =>
-      firebase.auth().onAuthStateChanged((user) => {
-        if (!user.uid) {
+      auth().onAuthStateChanged((user) => {
+        if (!user?.uid) {
           navigation.navigate('Modal');
         }
       }),
@@ -26,6 +27,7 @@ function Home() {
   );
   // Get all users from firebase db who are not current user and not included inside passes or matches categories
   useEffect(() => {
+    console.log('db called');
     let unsub;
     const fetchCards = async (): Promise<any> => {
       usersCollection.get().then((querySnapshot) => {
@@ -107,7 +109,7 @@ function Home() {
     <SafeAreaView style={styles.homeScreen}>
       <View style={styles.homeHeader}>
         {user && (
-          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+          <TouchableOpacity onPress={() => auth().signOut()}>
             <Image style={styles.homeHeaderAvatarImg} source={{ uri: user.photoURL }} />
           </TouchableOpacity>
         )}

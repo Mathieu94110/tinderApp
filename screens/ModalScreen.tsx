@@ -1,19 +1,18 @@
 import { useNavigation } from '@react-navigation/core';
 import React, { useLayoutEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, Alert, StyleSheet } from 'react-native';
+import { doc, setDoc } from '@firebase/firestore';
 import useAuth from '../hooks/useAuth';
 import firestore from '@react-native-firebase/firestore';
-
+import { db, timestamp } from '../firebase';
 const ModalScreen = () => {
   const navigation = useNavigation();
   const { user } = useAuth();
-  const [image, setImage] = useState(null);
-  const [job, setJob] = useState(null);
-  const [age, setAge] = useState(null);
+  const [image, setImage] = useState('');
+  const [job, setJob] = useState('');
+  const [age, setAge] = useState('');
 
   const incompleteForm = !image || !job || !age;
-  const uid = user.uid;
-  const usersCollection = firestore().collection('Users');
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -25,65 +24,23 @@ const ModalScreen = () => {
     });
   }, []);
 
-  async function checkUserProfile() {
-    usersCollection.get().then((querySnapshot) => {
-      if (querySnapshot.size > 0) {
-        querySnapshot.forEach((documentSnapShot) => {
-          const userId = documentSnapShot.id;
-          const userUid = documentSnapShot.data().id;
-          if (userUid === uid) {
-            updateUserProfile(userId);
-          } else {
-            addUser();
-          }
-        });
-      } else {
-        addUser();
-      }
-    });
-  }
-
-  const addUser = () => {
-    usersCollection
-      .add({
-        id: uid,
-        displayName: user.displayName,
-        photoUrl: image,
-        job: job,
-        age: age,
-        timestamp: firestore.FieldValue.serverTimestamp(),
-      })
+  const updateUserProfile = () => {
+    setDoc(doc(db, 'Users', user.uid), {
+      id: user.uid,
+      displayName: user.displayName,
+      photoURL: image,
+      job,
+      age,
+      timestamp,
+    })
       .then(() => {
-        console.log('User added');
-        navigation.navigate('Home');
-      });
-  };
-
-  const updateUserProfile = (userId: string) => {
-    usersCollection
-      .doc(userId)
-      .update({
-        photoUrl: image,
-        job: job,
-        age: age,
-      })
-      .then(() => {
-        console.log('User updated');
         navigation.navigate('Home');
       })
       .catch((error) => {
-        Alert.alert('Erreur', error.message);
+        Alert.alert(error.message);
       });
   };
 
-  const deteteUsers = (userId: string) => {
-    usersCollection
-      .doc(userId)
-      .delete()
-      .then(() => {
-        console.log('User deleted');
-      });
-  };
   return (
     <View style={styles.modalScreen}>
       <Image
@@ -124,7 +81,7 @@ const ModalScreen = () => {
       <TouchableOpacity
         disabled={incompleteForm}
         style={[styles.modalUpdateProfileContainer, incompleteForm ? styles.gray : styles.red]}
-        onPress={checkUserProfile}
+        onPress={updateUserProfile}
       >
         <Text style={styles.modalUpdateProfileText}>Mettre à jour le profil</Text>
       </TouchableOpacity>

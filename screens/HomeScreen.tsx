@@ -1,115 +1,97 @@
 import React, { useRef, useLayoutEffect, useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, SafeAreaView, TouchableOpacity, Alert } from 'react-native';
-import firestore, { firebase } from '@react-native-firebase/firestore';
 import Swiper from 'react-native-deck-swiper';
 import { useNavigation } from '@react-navigation/core';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import useAuth from '../hooks/useAuth';
 import { TinderProfile } from '../types/user';
-import auth from '@react-native-firebase/auth';
+import { collection, doc, getDocs, onSnapshot, query, setDoc, where } from '@firebase/firestore';
+import { db } from '../firebase';
 
 function Home() {
   const [profiles, setProfiles] = useState<TinderProfile[]>([]);
-  const { user } = useAuth();
-  const swipeRef = useRef<number | null>(null);
+  const { user, logout } = useAuth();
+  const swipeRef = useRef(null);
   const navigation = useNavigation();
-  const usersCollection = firestore().collection('Users');
 
   // redirect to Modal screen as long as user doesnt exist on firebase db
   useLayoutEffect(
     () =>
-      auth().onAuthStateChanged((user) => {
-        if (!user?.uid) {
+      onSnapshot(doc(db, 'Users', user.uid), (snapshot) => {
+        if (!snapshot.exists()) {
           navigation.navigate('Modal');
         }
       }),
     [],
   );
-  // Get all users from firebase db who are not current user and not included inside passes or matches categories
+
   useEffect(() => {
-    console.log('db called');
     let unsub;
-    const fetchCards = async (): Promise<any> => {
-      usersCollection.get().then((querySnapshot) => {
-        querySnapshot.forEach(async (documentSnapShot) => {
-          const userUid = documentSnapShot.data().id;
-          const userId = documentSnapShot.id;
-          if (userUid === user.uid) {
-            const passes = await usersCollection
-              .doc(userId)
-              .collection('passes')
-              .get()
-              .then((snapshot) => snapshot.docs.map((doc) => doc.data().id));
 
-            const matches = await usersCollection
-              .doc(userId)
-              .collection('matches')
-              .get()
-              .then((snapshot) => snapshot.docs.map((doc) => doc.data().id));
+    // THE ALGORITHM that makes it all work!
+    console.log(user.uid);
+    const fetchCards = async () => {
+      const passes = await getDocs(collection(db, 'Users', user.uid, 'passes')).then((snapshot) =>
+        snapshot.docs.map((doc) => doc.id),
+      );
 
-            Promise.all([passes, matches]).then(() => {
-              const passedUserIds = passes.length > 0 ? passes : ['test'];
-              const matchedUserIds = matches.length > 0 ? matches : ['test'];
-              unsub = firestore()
-                .collection('Users')
-                .where('id', 'not-in', [...passedUserIds, ...matchedUserIds])
-                .get()
-                .then((querySnapshot) => {
-                  setProfiles(
-                    querySnapshot.docs
-                      .filter((doc) => doc.data().id !== user.uid)
-                      .map((doc) => ({
-                        id: doc.id,
-                        ...doc.data(),
-                      }))
-                      .sort((x, y) => x.timestamp - y.timestamp),
-                  );
-                });
-            });
-          }
-        });
-      });
+      const swipes = await getDocs(collection(db, 'Users', user.uid, 'swipes')).then((snapshot) =>
+        snapshot.docs.map((doc) => doc.id),
+      );
+      console.log(passes);
+      const passedUserIds = passes.length > 0 ? passes : ['test'];
+      const swipedUserIds = swipes.length > 0 ? swipes : ['test'];
+
+      unsub = onSnapshot(
+        query(collection(db, 'Users'), where('id', 'not-in', [...passedUserIds, ...swipedUserIds])),
+        (snapshot) => {
+          console.log(snapshot.docs);
+          setProfiles(
+            snapshot.docs
+              .filter((doc) => doc.id !== user.uid)
+              .map((doc) => ({
+                id: doc.id,
+                ...doc.data(),
+              }))
+              .sort((x, y) => x.timestamp - y.timestamp),
+            // The sort is critical for ensuring new users go under the deck...
+          );
+        },
+      );
     };
+
     fetchCards();
+
     return unsub;
-  }, []);
+  }, [db]);
+
+  console.log(profiles);
 
   const swipeLeft = async (cardIndex: number) => {
     if (!profiles[cardIndex]) return;
-    swipe(cardIndex, 'passes');
-  };
-  const swipeRight = async (cardIndex: number) => {
-    if (!profiles[cardIndex]) return;
-    swipe(cardIndex, 'matches');
+
+    const userSwiped = profiles[cardIndex];
+
+    console.log(`${userSwiped.displayName} sent into passes category`);
+    setDoc(doc(db, 'Users', user.uid, 'passes', userSwiped.id), userSwiped);
   };
 
-  const swipe = async (cardIndex: number, choice: string) => {
+  const swipeRight = async (cardIndex: number) => {
+    if (!profiles[cardIndex]) return;
+
+    // Get all relevant user data
     const userSwiped = profiles[cardIndex];
-    usersCollection.get().then((querySnapshot) => {
-      querySnapshot.forEach((documentSnapShot) => {
-        const userId = documentSnapShot.id;
-        const userUid = documentSnapShot.data().id;
-        if (userUid === user.uid) {
-          usersCollection
-            .doc(userId)
-            .collection(choice)
-            .add(userSwiped)
-            .then(() => {
-              console.log(`${userSwiped.displayName} sent into ${choice} category`);
-            })
-            .catch((error) => {
-              Alert.alert('Erreur', error.message);
-            });
-        }
-      });
-    });
+
+    // User has swiped as first interaction between the two...
+    console.log(`${userSwiped.displayName} sent into swipes category`);
+    setDoc(doc(db, 'Users', user.uid, 'swipes', userSwiped.id), userSwiped);
   };
 
   return (
     <SafeAreaView style={styles.homeScreen}>
       <View style={styles.homeHeader}>
         {user && (
-          <TouchableOpacity onPress={() => auth().signOut()}>
+          <TouchableOpacity onPress={logout}>
             <Image style={styles.homeHeaderAvatarImg} source={{ uri: user.photoURL }} />
           </TouchableOpacity>
         )}
@@ -124,11 +106,12 @@ function Home() {
       <View style={styles.homeBody}>
         {profiles && (
           <Swiper
+            ref={swipeRef}
             containerStyle={{ backgroundColor: 'transparent' }}
             cards={profiles}
             overlayLabels={{
               left: {
-                title: 'PASS',
+                title: 'NEXT',
                 style: {
                   label: {
                     textAlign: 'right',
@@ -145,7 +128,7 @@ function Home() {
                 },
               },
             }}
-            renderCard={(card: TinderProfile) => {
+            renderCard={(card) => {
               return card ? (
                 <View key={card?.id} style={styles.homeProfileCard}>
                   <Text>{card?.displayName}</Text>

@@ -1,24 +1,19 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import { WEB_CLIENT_ID } from '@env';
-import auth from '@react-native-firebase/auth';
+import { signOut, onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../firebase';
 
 const AuthContext = createContext({});
-GoogleSignin.configure({
-  webClientId: WEB_CLIENT_ID,
-});
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState<any>(null);
   const [loadingInitial, setLoadingInitial] = useState(true);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = auth().onAuthStateChanged(async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         console.log('user infos', user);
         setUser(user);
-      } else {
-        setUser(null);
       }
       setLoadingInitial(false);
       setLoading(false);
@@ -26,28 +21,24 @@ export function AuthProvider({ children }) {
     return unsubscribe;
   }, []);
 
-  async function signInWithGoogle() {
-    try {
-      // get the user id token
-      const { idToken } = await GoogleSignin.signIn();
-      // create a credential using the token
-      const googleCredential = auth.GoogleAuthProvider.credential(idToken);
-      // authenticate the user using the credential
-      return auth().signInWithCredential(googleCredential);
-    } catch (error) {
-      console.log('error', error);
-    }
-  }
+  const logout = async () => {
+    signOut(auth)
+      .then(() => {
+        setUser(null);
+      })
+      .catch((error) => console.log(error));
+  };
+
   const memoedValue = useMemo(
     () => ({
       user,
+      setUser,
       loading,
+      logout,
       setLoading,
-      signInWithGoogle,
     }),
     [user, loading],
   );
-
   return (
     <AuthContext.Provider value={memoedValue}>{!loadingInitial && children}</AuthContext.Provider>
   );

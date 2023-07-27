@@ -3,8 +3,8 @@ import React, { useLayoutEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, Alert, StyleSheet } from 'react-native';
 import { doc, setDoc } from '@firebase/firestore';
 import useAuth from '../hooks/useAuth';
-import firestore from '@react-native-firebase/firestore';
 import { db, timestamp } from '../firebase';
+
 const ModalScreen = () => {
   const navigation = useNavigation();
   const { user } = useAuth();

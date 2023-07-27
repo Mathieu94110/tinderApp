@@ -1,18 +1,73 @@
-import React, { useLayoutEffect } from 'react';
-import { StyleSheet, View, Text, ImageBackground, TouchableOpacity } from 'react-native';
+import React, { useEffect, useLayoutEffect, useState } from 'react';
+import {
+  StyleSheet,
+  View,
+  Text,
+  ImageBackground,
+  TouchableOpacity,
+  TextInput,
+  Alert,
+} from 'react-native';
 import useAuth from '../hooks/useAuth';
 import { useNavigation } from '@react-navigation/core';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../firebase';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 
 const LoginScreen = () => {
-  const { signInWithGoogle } = useAuth();
+  const [type, setType] = useState(1); // 1 = Connection , 2 = Inscription
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const { loading, setLoading } = useAuth();
   const navigation = useNavigation();
 
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerShown: false,
-    });
-  }, []);
+  useEffect(() => {
+    setName('');
+    setEmail('');
+    setPassword('');
+  }, [type]);
 
+  const signIn = () => {
+    if (name.trim === '' || password.trim === '') {
+      return Alert.alert('Il faur renseigner tous les champs');
+    }
+    setLoading(true);
+    signInWithEmailAndPassword(auth, email, password)
+      .then(({ user }) => {
+        console.log(user);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.log(err);
+        setLoading(false);
+      });
+  };
+
+  const signUp = () => {
+    if (name.trim === '' || email.trim === '' || password.trim === '') {
+      return Alert.alert('Il faur renseigner tous les champs');
+    }
+    setLoading(true);
+    createUserWithEmailAndPassword(auth, email, password)
+      .then(({ user }) => {
+        console.log(user);
+        updateProfile(user, { displayName: name });
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.log(err);
+        setLoading(false);
+      });
+  };
+
+  if (loading) {
+    return (
+      <View>
+        <Text>Chargement en cours...</Text>
+      </View>
+    );
+  }
   return (
     <View style={styles.fullSize}>
       <ImageBackground
@@ -20,19 +75,61 @@ const LoginScreen = () => {
         style={styles.fullSize}
         source={{ uri: 'https://tinder.com/static/tinder.png' }}
       >
-        <TouchableOpacity onPress={signInWithGoogle} style={styles.actionButton}>
-          <Text>
-            <Text style={styles.loginText}>Se connecter avec </Text>
-            <Text style={styles.googleText}>
-              <Text style={{ color: '#4285F4' }}>G</Text>
-              <Text style={{ color: '#DB4437' }}>o</Text>
-              <Text style={{ color: '#F4B400' }}>o</Text>
-              <Text style={{ color: '#4285F5' }}>g</Text>
-              <Text style={{ color: '#0F9D58' }}>l</Text>
-              <Text style={{ color: '#DB4437' }}>e</Text>
-            </Text>
-          </Text>
-        </TouchableOpacity>
+        {type === 1 ? (
+          <View style={styles.loginContent}>
+            <Text>Connection</Text>
+            <Text>Accéder à votre compte Tinder</Text>
+            <View>
+              <Text>Email</Text>
+              <TextInput
+                keyboardType='email-adress'
+                value={email}
+                onChangeText={(text) => setEmail(text)}
+              />
+              <Text>Mot de passe</Text>
+              <TextInput
+                secureTextEntry={true}
+                keyboardType='password'
+                value={password}
+                onChangeText={(password) => setPassword(password)}
+              />
+              <TouchableOpacity onPress={signIn}>
+                <Text>Se connecter</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setType(2)}>
+                <Text>Vous n'avez pas encore de compte ?</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.loginContent}>
+            <Text>Inscription</Text>
+            <Text>Créer un nouveau compte</Text>
+            <View>
+              <Text>Nom</Text>
+              <TextInput value={name} onChangeText={(name) => setName(name)} />
+              <Text>Email</Text>
+              <TextInput
+                keyboardType='email-adress'
+                value={email}
+                onChangeText={(text) => setEmail(text)}
+                secureTextEntry={false}
+              />
+              <Text>Mot de passe</Text>
+              <TextInput
+                secureTextEntry={true}
+                value={password}
+                onChangeText={(password) => setPassword(password)}
+              />
+              <TouchableOpacity onPress={signUp}>
+                <Text>S'inscrire</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setType(1)}>
+                <Text>Vous avez déjà un compte ?</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
       </ImageBackground>
     </View>
   );
@@ -42,21 +139,10 @@ const styles = StyleSheet.create({
   fullSize: {
     flex: 1,
   },
-  actionButton: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    backgroundColor: '#4285F4',
-    position: 'absolute',
-    bottom: 40,
-    width: '50%',
-    minWidth: 200,
-    borderRadius: 10,
-    padding: 10,
-    marginLeft: '25%',
-    marginRight: '25%',
-    borderWidth: 1,
-    borderStyle: 'solid',
-    borderColor: '#fff',
+  loginContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   loginText: {

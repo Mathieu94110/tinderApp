@@ -1,10 +1,9 @@
 // Import the functions you need from the SDKs you need
 import { getApp, getApps, initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, EmailAuthProvider } from 'firebase/auth';
+import { getFirestore, serverTimestamp } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getReactNativePersistence, initializeAuth } from 'firebase/auth/react-native';
-import { getFirestore, serverTimestamp } from 'firebase/firestore';
-
 // Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: 'AIzaSyDGTiH7znMOPOS-nDEc_-LOfvsaiRh_Ubw',
@@ -17,22 +16,21 @@ const firebaseConfig = {
 
 let app, auth;
 
-// if (!getApps().length) {
-//   try {
-//     app = initializeApp(firebaseConfig);
-//     auth = initializeAuth(app, {
-//       persistence: getReactNativePersistence(AsyncStorage),
-//     });
-//   } catch (error) {
-//     console.log("Erreur lors de l'initialistion de l'application: " + error);
-//   }
-// } else {
-//   app = getApp();
-//   auth = getAuth(app);
-// }
+if (!getApps().length) {
+  try {
+    app = initializeApp(firebaseConfig);
+    auth = initializeAuth(app, {
+      persistence: getReactNativePersistence(AsyncStorage),
+    });
+  } catch (error) {
+    console.log("Erreur lors de l'initialistion de l'application: " + error);
+  }
+} else {
+  app = getApp();
+  auth = getAuth(app);
+}
 
-/* const provider = new EmailAuthProvider(); */
 const db = getFirestore();
 const timestamp = serverTimestamp();
-
-export { /* app, auth, */ db, timestamp };
+const provider = new EmailAuthProvider();
+export { app, auth, db, timestamp, provider };

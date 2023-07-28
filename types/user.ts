@@ -52,6 +52,6 @@ export type TinderProfile = {
   displayName: string;
   id: string;
   job: string;
-  photoUrl: string | null;
+  photoURL: string | null;
   timestamp: Object;
 };

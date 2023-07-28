@@ -5,8 +5,18 @@ import { useNavigation } from '@react-navigation/core';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import useAuth from '../hooks/useAuth';
 import { TinderProfile } from '../types/user';
-import { collection, doc, getDocs, onSnapshot, query, setDoc, where } from '@firebase/firestore';
-import { db } from '../firebase';
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  onSnapshot,
+  query,
+  setDoc,
+  where,
+} from '@firebase/firestore';
+import { db, timestamp } from '../firebase';
+import generateId from '../lib/generateId';
 
 function Home() {
   const [profiles, setProfiles] = useState<TinderProfile[]>([]);
@@ -28,9 +38,8 @@ function Home() {
   useEffect(() => {
     let unsub;
 
-    // THE ALGORITHM that makes it all work!
-    console.log('USER =', user);
     const fetchCards = async () => {
+      // fetch all cards for this user uid passed and swiped
       const passes = await getDocs(collection(db, 'Users', user.uid, 'passes')).then((snapshot) =>
         snapshot.docs.map((doc) => doc.id),
       );
@@ -42,10 +51,10 @@ function Home() {
       const passedUserIds = passes.length > 0 ? passes : ['test'];
       const swipedUserIds = swipes.length > 0 ? swipes : ['test'];
 
+      // reject himself profile and users already swiped or passed
       unsub = onSnapshot(
         query(collection(db, 'Users'), where('id', 'not-in', [...passedUserIds, ...swipedUserIds])),
         (snapshot) => {
-          console.log(snapshot.docs);
           setProfiles(
             snapshot.docs
               .filter((doc) => doc.id !== user.uid)
@@ -54,7 +63,6 @@ function Home() {
                 ...doc.data(),
               }))
               .sort((x, y) => x.timestamp - y.timestamp),
-            // The sort is critical for ensuring new users go under the deck...
           );
         },
       );
@@ -72,19 +80,43 @@ function Home() {
 
     const userSwiped = profiles[cardIndex];
 
-    console.log(`${userSwiped.displayName} sent into passes category`);
     setDoc(doc(db, 'Users', user.uid, 'passes', userSwiped.id), userSwiped);
   };
 
   const swipeRight = async (cardIndex: number) => {
     if (!profiles[cardIndex]) return;
 
-    // Get all relevant user data
     const userSwiped = profiles[cardIndex];
+    const loggedInProfile = await (await getDoc(doc(db, 'Users', user.uid))).data();
 
-    // User has swiped as first interaction between the two...
-    console.log(`${userSwiped.displayName} sent into swipes category`);
-    setDoc(doc(db, 'Users', user.uid, 'swipes', userSwiped.id), userSwiped);
+    // Check if user has swiped too
+    getDoc(doc(db, 'Users', userSwiped.id, 'swipes', user.uid)).then((documentSnapshot) => {
+      if (documentSnapshot.exists()) {
+        // user has matched with this person
+        // create match
+        console.log(`Congratulation, you matched with ${userSwiped.displayName}`);
+        setDoc(doc(db, 'Users', user.uid, 'swipes', userSwiped.id), userSwiped);
+
+        // Create a match !
+        setDoc(doc(db, 'matches', generateId(user.uid, userSwiped.id)), {
+          users: {
+            [user.uid]: loggedInProfile,
+            [userSwiped.id]: userSwiped,
+          },
+          usersMatched: [user.uid, userSwiped.id],
+          timestamp,
+        });
+        // navigate to match screen with info about match
+        navigation.navigate('Match', {
+          loggedInProfile,
+          userSwiped,
+        });
+      } else {
+        // User has swiped as first interaction between the two...
+        console.log(`${userSwiped.displayName} sent into swipes category`);
+        setDoc(doc(db, 'Users', user.uid, 'swipes', userSwiped.id), userSwiped);
+      }
+    });
   };
 
   return (
@@ -142,8 +174,8 @@ function Home() {
 
                   <Image
                     source={{
-                      uri: card?.photoUrl
-                        ? card?.photoUrl
+                      uri: card?.photoURL
+                        ? card?.photoURL
                         : 'https://audiovisuel.epiknet.org/wp-content/uploads/2019/03/%EF%BC%9F.jpg',
                     }}
                     style={styles.homeProfileCardImg}

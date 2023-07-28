@@ -73,59 +73,69 @@ const LoginScreen = () => {
       <ImageBackground
         resizeMode='cover'
         style={styles.fullSize}
-        source={{ uri: 'https://tinder.com/static/tinder.png' }}
+        source={{
+          uri: 'https://theme.zdassets.com/theme_assets/302164/8e05540d6f7ea752f80938c848f3ed79b548b959.png',
+        }}
       >
         {type === 1 ? (
-          <View style={styles.loginContent}>
-            <Text>Connection</Text>
-            <Text>Accéder à votre compte Tinder</Text>
+          <View style={styles.loginScreenContent}>
+            <Text style={styles.loginScreenTitle}>Connection</Text>
+            <Text style={styles.loginScreenSubTitle}>Accéder à votre compte Tinder</Text>
             <View>
-              <Text>Email</Text>
+              <Text style={styles.loginScreenLabel}>Email</Text>
               <TextInput
                 keyboardType='email-adress'
                 value={email}
                 onChangeText={(text) => setEmail(text)}
+                style={styles.loginScreenTextInput}
               />
-              <Text>Mot de passe</Text>
+              <Text style={styles.loginScreenLabel}>Mot de passe</Text>
               <TextInput
                 secureTextEntry={true}
                 keyboardType='password'
                 value={password}
                 onChangeText={(password) => setPassword(password)}
+                style={styles.loginScreenTextInput}
               />
-              <TouchableOpacity onPress={signIn}>
-                <Text>Se connecter</Text>
+              <TouchableOpacity onPress={signIn} style={styles.loginScreenLoginTextWrapper}>
+                <Text style={styles.loginScreenLoginText}>Se connecter</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setType(2)}>
-                <Text>Vous n'avez pas encore de compte ?</Text>
+                <Text style={styles.loginScreenSwitchText}>Vous n'avez pas encore de compte ?</Text>
               </TouchableOpacity>
             </View>
           </View>
         ) : (
-          <View style={styles.loginContent}>
-            <Text>Inscription</Text>
-            <Text>Créer un nouveau compte</Text>
+          <View style={styles.loginScreenContent}>
+            <Text style={styles.loginScreenTitle}>Inscription</Text>
+            <Text style={styles.loginScreenSubTitle}>Créer un nouveau compte</Text>
             <View>
-              <Text>Nom</Text>
-              <TextInput value={name} onChangeText={(name) => setName(name)} />
-              <Text>Email</Text>
+              <Text style={styles.loginScreenLabel}>Nom</Text>
+              <TextInput
+                value={name}
+                onChangeText={(name) => setName(name)}
+                style={styles.loginScreenTextInput}
+              />
+              <Text style={styles.loginScreenLabel}>Email</Text>
               <TextInput
                 keyboardType='email-adress'
                 value={email}
                 onChangeText={(text) => setEmail(text)}
                 secureTextEntry={false}
+                style={styles.loginScreenTextInput}
               />
-              <Text>Mot de passe</Text>
+              <Text style={styles.loginScreenLabel}>Mot de passe</Text>
               <TextInput
                 secureTextEntry={true}
                 value={password}
                 onChangeText={(password) => setPassword(password)}
+                style={styles.loginScreenTextInput}
               />
-              <TouchableOpacity onPress={signUp}>
-                <Text>S'inscrire</Text>
+              <TouchableOpacity onPress={signUp} style={styles.loginScreenLoginTextWrapper}>
+                <Text style={styles.loginScreenLoginText}>S'inscrire</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setType(1)}>
-                <Text>Vous avez déjà un compte ?</Text>
+                <Text style={styles.loginScreenSwitchText}>Vous avez déjà un compte ?</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -139,20 +149,62 @@ const styles = StyleSheet.create({
   fullSize: {
     flex: 1,
   },
-  loginContent: {
+  loginScreenContent: {
+    width: '100%',
+    paddingLeft: 20,
+    paddingRight: 20,
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-
+  loginScreenTitle: {
+    width: '100%',
+    fontWeight: '600',
+    fontSize: 30,
+    lineHeight: 34,
+    color: '#000',
+    textAlign: 'center',
+  },
+  loginScreenSubTitle: {
+    width: '100%',
+    fontWeight: '500',
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  loginScreenLabel: {
+    fontWeight: '500',
+    paddingBottom: 8,
+    color: '#fff',
+  },
+  loginScreenTextInput: {
+    backgroundColor: 'rgb(249 250 251)',
+    border: '1px solid rgb(209 213 219)',
+    color: 'rgb(17 24 39)',
+    fontSize: 14,
+    borderRadius: 5,
+  },
   loginText: {
     fontWeight: '600',
     textAlign: 'center',
     color: '#fff',
   },
-  googleText: {
-    padding: 14,
-    backgroundColor: '#fff',
+  loginScreenLoginText: {
+    textAlign: 'center',
+    color: '#fff',
+    fontWeight: '600',
+  },
+  loginScreenLoginTextWrapper: {
+    borderRadius: 8,
+    marginTop: 32,
+    backgroundColor: '#000',
+    paddingBottom: 12,
+    paddingTop: 12,
+  },
+  loginScreenSwitchText: {
+    color: '#fff',
+    fontWeight: '500',
+    marginTop: 8,
   },
 });
 

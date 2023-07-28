@@ -29,7 +29,7 @@ function Home() {
     let unsub;
 
     // THE ALGORITHM that makes it all work!
-    console.log(user.uid);
+    console.log('USER =', user);
     const fetchCards = async () => {
       const passes = await getDocs(collection(db, 'Users', user.uid, 'passes')).then((snapshot) =>
         snapshot.docs.map((doc) => doc.id),
@@ -92,7 +92,14 @@ function Home() {
       <View style={styles.homeHeader}>
         {user && (
           <TouchableOpacity onPress={logout}>
-            <Image style={styles.homeHeaderAvatarImg} source={{ uri: user.photoURL }} />
+            <Image
+              style={styles.homeHeaderAvatarImg}
+              source={{
+                uri: user.photoURL
+                  ? user.photoURL
+                  : 'https://img.freepik.com/free-icon/user_318-159711.jpg',
+              }}
+            />
           </TouchableOpacity>
         )}
 

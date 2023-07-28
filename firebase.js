@@ -14,22 +14,23 @@ const firebaseConfig = {
   appId: '1:1015731250585:web:2e91d97af064b5b0825f08',
 };
 
-let app, auth;
+// let app, auth;
 
-if (!getApps().length) {
-  try {
-    app = initializeApp(firebaseConfig);
-    auth = initializeAuth(app, {
-      persistence: getReactNativePersistence(AsyncStorage),
-    });
-  } catch (error) {
-    console.log("Erreur lors de l'initialistion de l'application: " + error);
-  }
-} else {
-  app = getApp();
-  auth = getAuth(app);
-}
-
+// if (!getApps().length) {
+//   try {
+//     app = initializeApp(firebaseConfig);
+//     auth = initializeAuth(app, {
+//       persistence: getReactNativePersistence(AsyncStorage),
+//     });
+//   } catch (error) {
+//     console.log("Erreur lors de l'initialistion de l'application: " + error);
+//   }
+// } else {
+//   app = getApp();
+//   auth = getAuth(app);
+// }
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 const db = getFirestore();
 const timestamp = serverTimestamp();
 const provider = new EmailAuthProvider();

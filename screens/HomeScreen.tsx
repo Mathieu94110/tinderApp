@@ -138,7 +138,7 @@ function Home() {
         <TouchableOpacity onPress={() => navigation.navigate('Modal')}>
           <Image style={styles.homeHeaderTinderImg} source={require('../assets/tinder-icon.png')} />
         </TouchableOpacity>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('Chat')}>
           <Icon name='comments' size={30} color='#FF5864' />
         </TouchableOpacity>
       </View>

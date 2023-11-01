@@ -1,5 +1,13 @@
 import React, { useRef, useLayoutEffect, useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet, SafeAreaView, TouchableOpacity, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  SafeAreaView,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
 import Swiper from 'react-native-deck-swiper';
 import { useNavigation } from '@react-navigation/core';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -17,9 +25,9 @@ import {
 } from '@firebase/firestore';
 import { db, timestamp } from '../firebase';
 import generateId from '../lib/generateId';
-
 function Home() {
   const [profiles, setProfiles] = useState<TinderProfile[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
   const { user, logout } = useAuth();
   const swipeRef = useRef(null);
   const navigation = useNavigation();
@@ -39,6 +47,7 @@ function Home() {
     let unsub;
 
     const fetchCards = async () => {
+      setLoading(true);
       // fetch all cards for this user uid passed and swiped
       const passes = await getDocs(collection(db, 'Users', user.uid, 'passes')).then((snapshot) =>
         snapshot.docs.map((doc) => doc.id),
@@ -47,7 +56,6 @@ function Home() {
       const swipes = await getDocs(collection(db, 'Users', user.uid, 'swipes')).then((snapshot) =>
         snapshot.docs.map((doc) => doc.id),
       );
-      console.log(passes);
       const passedUserIds = passes.length > 0 ? passes : ['test'];
       const swipedUserIds = swipes.length > 0 ? swipes : ['test'];
 
@@ -60,11 +68,12 @@ function Home() {
               .filter((doc) => doc.id !== user.uid)
               .map((doc) => ({
                 id: doc.id,
-                ...doc.data(),
+                ...(doc.data() as Omit<TinderProfile, 'id'>),
               }))
-              .sort((x, y) => x.timestamp - y.timestamp),
+              .sort((x, y) => Number(x.timestamp) - Number(y.timestamp)),
           );
         },
+        setLoading(false),
       );
     };
 
@@ -73,8 +82,6 @@ function Home() {
     return unsub;
   }, [db]);
 
-  console.log(profiles);
-
   const swipeLeft = async (cardIndex: number) => {
     if (!profiles[cardIndex]) return;
 
@@ -82,7 +89,6 @@ function Home() {
 
     setDoc(doc(db, 'Users', user.uid, 'passes', userSwiped.id), userSwiped);
   };
-
   const swipeRight = async (cardIndex: number) => {
     if (!profiles[cardIndex]) return;
 
@@ -118,6 +124,7 @@ function Home() {
       }
     });
   };
+  const imageUrlRegex = /images|\.(jpeg|jpg|gif|png|bmp|webp)$/i;
 
   return (
     <SafeAreaView style={styles.homeScreen}>
@@ -134,7 +141,6 @@ function Home() {
             />
           </TouchableOpacity>
         )}
-
         <TouchableOpacity onPress={() => navigation.navigate('Modal')}>
           <Image style={styles.homeHeaderTinderImg} source={require('../assets/tinder-icon.png')} />
         </TouchableOpacity>
@@ -143,7 +149,7 @@ function Home() {
         </TouchableOpacity>
       </View>
       <View style={styles.homeBody}>
-        {profiles && (
+        {profiles.length > 0 && !loading ? (
           <Swiper
             ref={swipeRef}
             containerStyle={{ backgroundColor: 'transparent' }}
@@ -168,15 +174,15 @@ function Home() {
               },
             }}
             renderCard={(card) => {
-              return card ? (
+              return (
                 <View key={card?.id} style={styles.homeProfileCard}>
                   <Text>{card?.displayName}</Text>
-
                   <Image
                     source={{
-                      uri: card?.photoURL
-                        ? card?.photoURL
-                        : 'https://audiovisuel.epiknet.org/wp-content/uploads/2019/03/%EF%BC%9F.jpg',
+                      uri:
+                        card.photoURL && imageUrlRegex.test(card.photoURL)
+                          ? card?.photoURL
+                          : 'https://audiovisuel.epiknet.org/wp-content/uploads/2019/03/%EF%BC%9F.jpg',
                     }}
                     style={styles.homeProfileCardImg}
                   />
@@ -192,18 +198,6 @@ function Home() {
                     <Text style={styles.homeProfileCardAge}>{card?.age}</Text>
                   </View>
                 </View>
-              ) : (
-                <View style={styles.cardShadow}>
-                  <Text style={styles.noResults}>Vous avez parcouru tous les profils</Text>
-
-                  <Image
-                    height={100}
-                    width={100}
-                    source={{
-                      uri: 'https://cdn.shopify.com/s/files/1/1061/1924/products/Crying_Face_Emoji_large.png?v=1571606037',
-                    }}
-                  />
-                </View>
               );
             }}
             animateCardOpacity
@@ -218,30 +212,48 @@ function Home() {
             backgroundColor={'#4FD0E9'}
             stackSize={5}
           ></Swiper>
+        ) : !profiles.length && !loading ? (
+          <View style={[styles.homeLoadingContainer, styles.homeLoader]}>
+            <Text style={styles.homeNoResults}>Vous avez parcouru tous les profils 😢</Text>
+          </View>
+        ) : (
+          <View style={[styles.homeLoadingContainer, styles.homeLoader]}>
+            <ActivityIndicator size='large' color='#FECACA' />
+          </View>
         )}
       </View>
       <View style={styles.homeFooter}>
         <TouchableOpacity
           onPress={() => swipeRef.current?.swipeLeft()}
-          style={[styles.homeProfileArrows, styles.crossBtn]}
+          style={[styles.homeProfileArrows, styles.homeCrossBtn]}
         >
-          <Text style={styles.cross}>X</Text>
+          <Text style={styles.homeCross}>X</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           onPress={() => swipeRef.current?.swipeRight()}
-          style={[styles.homeProfileArrows, styles.heartBtn]}
+          style={[styles.homeProfileArrows, styles.homeHeartBtn]}
         >
-          <Icon name='heart' color='green' size={24} />
+          <Icon name='heart' color='black' size={24} />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 }
-
 export default Home;
 
 const styles = StyleSheet.create({
+  homeLoadingContainer: {
+    display: 'flex',
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  homeLoader: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    padding: 10,
+  },
   homeScreen: {
     flex: 1,
   },
@@ -269,7 +281,7 @@ const styles = StyleSheet.create({
   homeProfileCard: {
     position: 'relative',
     backgroundColor: '#fff',
-    height: '75%',
+    height: '70%',
     borderRadius: 12,
   },
   homeProfileCardImg: {
@@ -303,11 +315,12 @@ const styles = StyleSheet.create({
     shadowRadius: 1.42,
     elevation: 2,
   },
-  noResults: {
+  homeNoResults: {
     fontWeight: '600',
-    paddingBottom: 20,
+    color: '#FF5864',
+    fontSize: 18,
   },
-  cross: {
+  homeCross: {
     color: 'red',
     fontSize: 24,
     fontWeight: '600',
@@ -335,17 +348,13 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
     width: 54,
     height: 54,
+    marginTop: 10,
+    marginBottom: 10,
   },
-  crossBtn: {
+  homeCrossBtn: {
     backgroundColor: '#FECACA',
   },
-  heartBtn: {
+  homeHeartBtn: {
     backgroundColor: '#BBF7D0',
-  },
-  green: {
-    color: 'green',
-  },
-  red: {
-    color: 'red',
   },
 });

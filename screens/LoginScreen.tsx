@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -7,13 +7,13 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import useAuth from '../hooks/useAuth';
 import { useNavigation } from '@react-navigation/core';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-
 const LoginScreen = () => {
   const [type, setType] = useState(1); // 1 = Connection , 2 = Inscription
   const [email, setEmail] = useState('');
@@ -21,50 +21,43 @@ const LoginScreen = () => {
   const [name, setName] = useState('');
   const { loading, setLoading } = useAuth();
   const navigation = useNavigation();
-
   useEffect(() => {
     setName('');
     setEmail('');
     setPassword('');
   }, [type]);
-
   const signIn = () => {
-    if (name.trim === '' || password.trim === '') {
-      return Alert.alert('Il faur renseigner tous les champs');
+    if (email.trim().length === 0 || password.trim().length === 0) {
+      return Alert.alert('Il faut renseigner tous les champs');
     }
     setLoading(true);
     signInWithEmailAndPassword(auth, email, password)
       .then(({ user }) => {
-        console.log(user);
         setLoading(false);
       })
       .catch((err) => {
-        console.log(err);
         setLoading(false);
       });
   };
-
   const signUp = () => {
-    if (name.trim === '' || email.trim === '' || password.trim === '') {
-      return Alert.alert('Il faur renseigner tous les champs');
+    if (name.trim().length === 0 || email.trim().length === 0 || password.trim().length === 0) {
+      return Alert.alert('Il faut renseigner tous les champs');
     }
     setLoading(true);
     createUserWithEmailAndPassword(auth, email, password)
       .then(({ user }) => {
-        console.log(user);
         updateProfile(user, { displayName: name });
         setLoading(false);
       })
       .catch((err) => {
-        console.log(err);
         setLoading(false);
       });
   };
 
   if (loading) {
     return (
-      <View>
-        <Text>Chargement en cours...</Text>
+      <View style={styles.fullSize}>
+        <ActivityIndicator size='large' color='#000' />
       </View>
     );
   }
@@ -148,6 +141,7 @@ const LoginScreen = () => {
 const styles = StyleSheet.create({
   fullSize: {
     flex: 1,
+    justifyContent: 'center',
   },
   loginScreenContent: {
     width: '100%',

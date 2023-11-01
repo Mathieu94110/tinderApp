@@ -49,8 +49,8 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   chatListEmptyText: {
-    textAlign: 'center',
+    fontWeight: '600',
+    color: '#FF5864',
     fontSize: 18,
-    lineHeight: 28,
   },
 });

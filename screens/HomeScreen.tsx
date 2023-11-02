@@ -142,7 +142,10 @@ function Home() {
           </TouchableOpacity>
         )}
         <TouchableOpacity onPress={() => navigation.navigate('Modal')}>
-          <Image style={styles.homeHeaderTinderImg} source={require('../assets/tinder-icon.png')} />
+          <Image
+            style={styles.homeHeaderTinderImg}
+            source={require('../assets/images/tinder-icon.png')}
+          />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate('Chat')}>
           <Icon name='comments' size={30} color='#FF5864' />

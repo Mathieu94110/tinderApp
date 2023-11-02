@@ -10,7 +10,6 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import useAuth from '../hooks/useAuth';
-import { useNavigation } from '@react-navigation/core';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
@@ -20,12 +19,13 @@ const LoginScreen = () => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const { loading, setLoading } = useAuth();
-  const navigation = useNavigation();
+
   useEffect(() => {
     setName('');
     setEmail('');
     setPassword('');
   }, [type]);
+
   const signIn = () => {
     if (email.trim().length === 0 || password.trim().length === 0) {
       return Alert.alert('Il faut renseigner tous les champs');
@@ -35,7 +35,8 @@ const LoginScreen = () => {
       .then(({ user }) => {
         setLoading(false);
       })
-      .catch((err) => {
+      .catch((error) => {
+        Alert.alert(`Erreur ${error.code}: ${error.message}`);
         setLoading(false);
       });
   };
@@ -49,7 +50,8 @@ const LoginScreen = () => {
         updateProfile(user, { displayName: name });
         setLoading(false);
       })
-      .catch((err) => {
+      .catch((error) => {
+        Alert.alert(`Erreur ${error.code}: ${error.message}`);
         setLoading(false);
       });
   };
@@ -77,7 +79,7 @@ const LoginScreen = () => {
             <View>
               <Text style={styles.loginScreenLabel}>Email</Text>
               <TextInput
-                keyboardType='email-adress'
+                keyboardType='email-address'
                 value={email}
                 onChangeText={(text) => setEmail(text)}
                 style={styles.loginScreenTextInput}
@@ -85,7 +87,7 @@ const LoginScreen = () => {
               <Text style={styles.loginScreenLabel}>Mot de passe</Text>
               <TextInput
                 secureTextEntry={true}
-                keyboardType='password'
+                keyboardType='visible-password'
                 value={password}
                 onChangeText={(password) => setPassword(password)}
                 style={styles.loginScreenTextInput}
@@ -105,13 +107,14 @@ const LoginScreen = () => {
             <View>
               <Text style={styles.loginScreenLabel}>Nom</Text>
               <TextInput
+                keyboardType='default'
                 value={name}
                 onChangeText={(name) => setName(name)}
                 style={styles.loginScreenTextInput}
               />
               <Text style={styles.loginScreenLabel}>Email</Text>
               <TextInput
-                keyboardType='email-adress'
+                keyboardType='email-address'
                 value={email}
                 onChangeText={(text) => setEmail(text)}
                 secureTextEntry={false}
@@ -172,9 +175,11 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   loginScreenTextInput: {
-    backgroundColor: 'rgb(249 250 251)',
-    border: '1px solid rgb(209 213 219)',
-    color: 'rgb(17 24 39)',
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#CCCCCC',
+    borderStyle: 'solid',
+    color: '#111827',
     fontSize: 14,
     borderRadius: 5,
   },
